@@ -212,6 +212,19 @@ void Resource::printResources() const {
     std::cout << "===============================" << std::endl;
 }
 
+Loan::Loan() {
+    amount = 0;
+    remainingTurns = 0;
+    interestRate = 0;
+    isDefaulted = false;
+}
+Loan::Loan(int amt, int turns, double rate) {
+    amount = amt;
+    remainingTurns = turns;
+    interestRate = rate;
+    isDefaulted = false;
+}
+
 Finance::Finance() : treasuryGold(500), corruptionLevel(10), totalStolenGold(0), securityExpense(0) {
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
 }
@@ -230,7 +243,8 @@ int& Finance::getGold() {
     return treasuryGold;
 }
 void Finance::takeLoan(int amount, int turns, double interest) {
-    activeLoans.emplace_back(amount, turns, interest);
+    Loan L(amount, turns, interest);
+    activeLoans.push_back(L);
     treasuryGold += amount;
     std::cout << "Loan Taken: " << amount << " gold | Repay in " << turns << " turns at " << interest * 100 << "% interest" << std::endl;
 }
@@ -542,6 +556,11 @@ float Economy::getTreasury() const {
     return treasury;
 }
 
+King::King() {
+    name = "";
+    popularity = 0;
+    alive = 0;
+}
 King::King(const std::string& name) {
     this->name = name;
     this->popularity = rand() % 100;
@@ -551,6 +570,11 @@ void King::displayProfile() const {
     std::cout << "King: " << name << " | Popularity: " << popularity * 100 << "%" << std::endl;
 }
 
+Faction::Faction() {
+    name = "";
+    influence = 0;
+    supportsCurrentKing = 0;
+}
 Faction::Faction(const std::string& name, float influence) {
     this->name = name;
     this->influence = influence;
@@ -564,20 +588,21 @@ KingElectionSystem::KingElectionSystem() {
 }
 void KingElectionSystem::addCandidate(const std::string& name) {
     King k(name);
-    candidates.emplace_back(k);
+    candidates.push_back(k);
 }
 void KingElectionSystem::addFaction(const std::string& name, float influence) {
-    factions.emplace_back(name, influence);
+    Faction F(name, influence);
+    factions.push_back(F);
 }
 void KingElectionSystem::holdElection() {
     std::cout << std::endl << "Election in progress..." << std::endl;
-    std::vector<float> scores(candidates.size(), 0.0f);
+    Vector<float> scores(candidates.size(), 0.0f);
 
     for (int i = 0; i < factions.size(); ++i) {
         int choice = rand() % candidates.size();
         scores[choice] += factions[i].influence;
     }
-    int winnerIdx = distance(scores.begin(), max_element(scores.begin(), scores.end()));
+    int winnerIdx = std::distance(scores.begin(), std::max_element(scores.begin(), scores.end()));
     currentKing = &candidates[winnerIdx];
     std::cout << "New King Elected!!!";
     currentKing->displayProfile();

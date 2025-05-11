@@ -1,7 +1,6 @@
 #pragma once
 #include <iostream>
 #include <map>
-#include <vector>
 #include <string>
 #include <chrono>
 #include <thread>
@@ -11,6 +10,92 @@ class Pair {
 public:
     A first;
     B second;
+};
+
+template<class T>
+class Vector {
+private:
+    T* data;
+    int s;
+public:
+    Vector() {
+        data = nullptr;
+        s = 0;
+    }
+    Vector(int size, T value) {
+        s = size;
+        data = new T[size];
+        for (int i = 0; i < size; i++) {
+            data[i] = value;
+        }
+    }
+    int size() const {
+        return s;
+    }
+    void push_back(const T& value) {
+        s++;
+        T* temp = new T[s];
+        for (int i = 0; i < s - 1; i++) {
+            temp[i] = data[i];
+        }
+        temp[s - 1] = value;
+        delete[] data;
+        data = temp;
+    }
+    T* begin() {
+        return data;
+    }
+    T* end() {
+        return data + s;
+    }
+    void erase(int index) {
+        if (index < 0 || index >= s) return;
+        T* temp = new T[s - 1];
+        for (int i = 0; i < index; ++i)
+            temp[i] = data[i];
+        for (int i = index + 1; i < s; ++i)
+            temp[i - 1] = data[i];
+        delete[] data;
+        data = temp;
+        --s;
+    }
+    T* erase(T* pos) {
+        if (pos < begin() || pos >= end()) return end();
+        int index = pos - data;
+        T* temp = new T[s - 1];
+        for (int i = 0; i < index; ++i)
+            temp[i] = data[i];
+        for (int i = index + 1; i < s; ++i)
+            temp[i - 1] = data[i];
+        delete[] data;
+        data = temp;
+        --s;
+        return data + index; 
+    }
+    T& operator[](size_t index) {
+        return data[index];
+    }
+    const T& operator[](size_t index) const {
+        return data[index];
+    }
+    Vector(const Vector& other) {
+        s = other.s;
+        data = new T[s];
+        for (int i = 0; i < s; ++i)
+            data[i] = other.data[i];
+    }
+    Vector& operator=(const Vector& other) {
+        if (this == &other) return *this;
+        delete[] data;
+        s = other.s;
+        data = new T[s];
+        for (int i = 0; i < s; ++i)
+            data[i] = other.data[i];
+        return *this;
+    }
+    ~Vector() {
+        delete[] data;
+    }
 };
 
 enum ResourceType { WOOD, STONE, IRON, FOOD };
@@ -25,7 +110,7 @@ public:
 };
 class Market {
 private:
-    std::vector<Good> goods;
+    Vector<Good> goods;
     float inflationRate;
 
 public:
@@ -37,7 +122,7 @@ public:
 };
 class Diplomacy {
 private:
-    std::vector<Pair<std::string, Pair<bool,bool>>> alliances;
+    Vector<Pair<std::string, Pair<bool,bool>>> alliances;
 public:
     void formAlliance(const std::string& kingdom);
     void breakAlliance(const std::string& kingdom);
@@ -47,7 +132,7 @@ public:
 };
 class MultiplayerChat {
 private:
-    std::vector<std::string> messageLog;
+    Vector<std::string> messageLog;
 
 public:
     void sendMessage(const std::string& from, const std::string& msg);
@@ -78,13 +163,13 @@ public:
     int remainingTurns;
     double interestRate;
     bool isDefaulted;
-    Loan(int amt, int turns, double rate)
-        : amount(amt), remainingTurns(turns), interestRate(rate), isDefaulted(false) {}
+    Loan();
+    Loan(int amt, int turns, double rate);
 };
 class Finance {
 private:
     int treasuryGold;
-    std::vector<Loan> activeLoans;
+    Vector<Loan> activeLoans;
     int corruptionLevel;
     int totalStolenGold;
     int securityExpense;
@@ -170,6 +255,7 @@ public:
     std::string name;
     float popularity;
     bool alive;
+    King();
     King(const std::string& name);
     void displayProfile() const;
 };
@@ -178,13 +264,13 @@ public:
     std::string name;
     float influence; // 0 to 1
     bool supportsCurrentKing;
-
+    Faction();
     Faction(const std::string& name, float influence);
 };
 class KingElectionSystem {
 private:
-    std::vector<King> candidates;
-    std::vector<Faction> factions;
+    Vector<King> candidates;
+    Vector<Faction> factions;
     King* currentKing;
     bool instability;
 
