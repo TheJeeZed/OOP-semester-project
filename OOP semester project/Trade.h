@@ -6,6 +6,13 @@
 #include <chrono>
 #include <thread>
 
+template<class A, class B>
+class Pair {
+public:
+    A first;
+    B second;
+};
+
 enum ResourceType { WOOD, STONE, IRON, FOOD };
 enum FraudEvent { NONE, BANKHEIST, EMBEZZLMENT };
 enum SocialClass { PEASANT, MERCHANT, NOBILITY };
@@ -30,7 +37,7 @@ public:
 };
 class Diplomacy {
 private:
-    std::vector<std::pair<std::string, std::pair<bool,bool>>> alliances;
+    std::vector<Pair<std::string, Pair<bool,bool>>> alliances;
 public:
     void formAlliance(const std::string& kingdom);
     void breakAlliance(const std::string& kingdom);
