@@ -371,7 +371,7 @@ void Economy::normalizedata() {
 }
 void Economy::takeLoan(int amount, float interest) {
     debt += amount + amount * interest;
-    treasuryGold += amount + amount * interest;
+    treasuryGold += amount;
 }
 int Economy::getDebt() {
     return debt;
@@ -726,7 +726,7 @@ void Event::handleArmy(Player& player, const Vector<Player>& players){
         std::cout << "4. Battle Another Kingdom" << std::endl;
         std::cout << "5. View Army Status" << std::endl;
         std::cout << "6. Back" << std::endl;
-        int choice = getIntInput("Choose an option (1-7): ", 1, 7);
+        int choice = getIntInput("Choose an option (1-6): ", 1, 6);
         if (choice == 6)break;
         switch (choice) {
         case 1:
@@ -765,6 +765,8 @@ void Event::handleArmy(Player& player, const Vector<Player>& players){
             if (!opponent.army.getGeneral()) {
                 opponent.army.assignGeneral("General_" + opponent.name);
             }
+            attackerPopulation = player.population.getpoor() + player.population.getnoble();
+            defenderPopulation = opponent.population.getpoor() + opponent.population.getnoble();
             player.army.simulateTwoPlayerBattle(opponent.army, player.economy.getGold(), player.resources.getResourceAmount(FOOD),
                 opponent.economy.getGold(), opponent.resources.getResourceAmount(FOOD),
                 attackerPopulation, defenderPopulation);
@@ -783,7 +785,7 @@ void Event::handleArmy(Player& player, const Vector<Player>& players){
 }
 void Event::handleEconomy(Player& player) {
     while (true) {
-        system("pause");
+        system("cls");
         std::cout << std::endl;
         std::cout << "=== Economy Menu ===" << std::endl;
         player.economy.displayStatus();
@@ -803,9 +805,8 @@ void Event::handleEconomy(Player& player) {
             player.economy.takeLoan(100.0f, 0.1f);
             std::cout << player.name << " took a loan of 100 gold with 10% interest." << std::endl;
             player.economy.displayStatus();
-            std::cout << "Debt: " << player.economy.getDebt() << " gold" << std::endl;
             std::this_thread::sleep_for(std::chrono::seconds(2));
-            break;
+            return;
         }
         if (choice == 3)break;
     }
@@ -840,7 +841,7 @@ void Event::handleTrade(Player& player) {
 void Event::handleDiplomacy(Player& player, const Vector<Player>& players) {
     int allianceAction;
     while (true) {
-        system("pause");
+        system("cls");
         std::cout << std::endl;
         std::cout << "=== Diplomacy Menu ===" << std::endl;
         std::cout << "1. Form/Break Alliance" << std::endl;
@@ -894,7 +895,7 @@ void Event::handleDiplomacy(Player& player, const Vector<Player>& players) {
 }
 void Event::handleCommunication(Player& player, MultiplayerChat& chat, Vector<std::string>& messageLog) {
     while (true) {
-        system("pause");
+        system("cls");
         std::cout << std::endl;
         std::cout << "=== Communication Menu ===" << std::endl;
         std::cout << "1. Send Message" << std::endl;
@@ -922,7 +923,7 @@ void Event::handleCommunication(Player& player, MultiplayerChat& chat, Vector<st
 }
 void Event::playerTurn(Player& player, const Vector<Player>& players, MultiplayerChat& chat, Vector<std::string>& messageLog, int turn) {
     if (!player.active) return;
-    system("pause");
+    system("cls");
     std::cout << std::endl;
     std::cout << "=== Turn " << turn << ": " << player.name << "'s Status ===" << std::endl;
     player.economy.displayStatus();
