@@ -96,11 +96,13 @@ public:
     ~Vector() {
         delete[] data;
     }
+    bool empty() {
+        return (s == 0);
+    }
 };
 
 enum ResourceType { WOOD, STONE, IRON, FOOD };
 enum FraudEvent { NONE, BANKHEIST, EMBEZZLMENT };
-enum SocialClass { PEASANT, MERCHANT, NOBILITY };
 
 class Good {
 public:
@@ -119,6 +121,7 @@ public:
     void trade(ResourceType type, int amount, bool buying);
     void imposeSanction();
     void showMarket();
+    float getPrice(ResourceType type);
 };
 class Diplomacy {
 private:
@@ -129,6 +132,7 @@ public:
     void requestTrade(const std::string& kingdom);
     void imposeSanctionOn(const std::string& kingdom);
     void showDiplomaticStatus();
+    void addKingdom(const std::string& kingdom);
 };
 class MultiplayerChat {
 private:
@@ -137,14 +141,6 @@ private:
 public:
     void sendMessage(const std::string& from, const std::string& msg);
     void showChatHistory();
-};
-class RandomEvents {
-private:
-    static const int WAR_THRESHOLD;
-    static const int PLAGUE_THRESHOLD;
-    static const int FAMINE_THRESHOLD;
-public:
-    static void triggerRandomEvent();
 };
 class Resource {
 private:
@@ -155,6 +151,7 @@ public:
     bool consumeResources(ResourceType type, int amount);
     void addResource(ResourceType type, int amount);
     int& getResourceAmount(ResourceType type);
+    int getResourceAmount(ResourceType type) const;
     void printResources() const;
 };
 class Loan {
@@ -166,34 +163,45 @@ public:
     Loan();
     Loan(int amt, int turns, double rate);
 };
-class Finance {
+class Economy {
 private:
-    int treasuryGold;
     Vector<Loan> activeLoans;
-    int corruptionLevel;
-    int totalStolenGold;
+    float inflationRate;
+    float corruptionLevel;
+    float marketHealth;
+    float taxRatePoor;
+    float taxRateNoble;
+    bool progressiveTax;
+    bool marketCrash;
+    int hospitalBudget;
+    int foodBudget;
+    int militaryBudget;
     int securityExpense;
-
+    int treasuryGold;
 public:
-    Finance();
-
-    void addGold(int amount);
-    bool spendGold(int amount);
-    int& getGold();
-
+    Economy();
+    void collectTaxes(int poorPopulation, int noblePopulation);
+    void setTaxRates(float poorRate, float nobleRate, bool isProgressive);
+    void simulateInflation();
+    void printMoney(int amount);
+    void triggerRandomEvent();
+    void checkMarketCrash();
+    void increaseCorruption(float amount);
+    void setCorruption(float amount);
+    bool allocateBudget(int hospital, int food, int military);
+    void displayStatus();
+    void simulateCorruption();
     void takeLoan(int amount, int turns, double interest);
     void simulateLoanTurn();
     bool repayLoan(int index);
     void checkDefaults();
-
-    void simulateCorruption();
     void triggerFraud(FraudEvent event);
-
     void audit();
-    void simulateAuditResult();
     void normalizedata();
-
-    void printFinanceReport() const;
+    void addGold(int amount);
+    bool spendGold(int amount);
+    int& getGold();
+    int getGold() const;
 };
 class General {
 public:
@@ -216,39 +224,10 @@ public:
     void produceWeapons(int& gold);
     void feedArmy(int& food);
     void checkMorale();
-    void simulateBattle(int& gold, int& food);
+    General* getGeneral() const;
     void displayStatus() const;
-};
-class Economy {
-private:
-    float treasury;
-    float inflationRate;
-    float corruptionLevel;
-    float marketHealth; 
-    int poorPopulation;
-    int noblePopulation;
-    float taxRatePoor;
-    float taxRateNoble;
-    bool progressiveTax;
-    bool marketCrash;
-    float hospitalBudget;
-    float foodBudget;
-    float militaryBudget;
-
-public:
-    Economy();
-    void collectTaxes();
-    void setTaxRates(float poorRate, float nobleRate, bool isProgressive);
-    void simulateInflation();
-    void printMoney(float amount);
-    void triggerRandomEvent();
-    void checkMarketCrash();
-    void increaseCorruption(float amount);
-    void setCorruption(float amount);
-    bool allocateBudget(float hospital, float food, float military);
-    void showBudgetStatus();
-    void showEconomyStatus();
-    float getTreasury() const;
+    void simulateTwoPlayerBattle(Army& opponent, int& attackerGold, int& attackerFood, int& defenderGold, int& defenderFood, int& attackerPopulation, int& defenderPopulation);
+    ~Army();
 };
 class King {
 public:
@@ -272,7 +251,6 @@ private:
     Vector<King> candidates;
     Vector<Faction> factions;
     King* currentKing;
-    bool instability;
 
 public:
     KingElectionSystem();
@@ -292,20 +270,44 @@ private:
     int foodSupply;
     int healthcareLevel;
     int jobAvailability;
-    int classCounts[3];
-    float taxRates[3];
-
-    void setDefaultTaxRates();
-    void checkForClassConflict();
-
+    int nobels;
+    int peasents;
 public:
     Population();
+    void setPopulation(int pop, int peas, int nob);
     void simulatePlague();
     void simulateFamine();
     void simulateWarCasualties(int deaths);
     void simulatePopulationGrowth();
-    void adjustTaxRates(float peasant, float merchant, float nobility, float military);
     void displayStats() const;
+    int getpoor() const;
+    int getnoble() const;
 };
-
-
+class Player {
+public:
+    std::string name;
+    Market market;
+    Diplomacy diplomacy;
+    Resource resources;
+    Army army;
+    Economy economy;
+    KingElectionSystem electionSystem;
+    Population population;
+    bool active;
+    Player();
+    Player(const std::string& n);
+};
+class Event {
+public:
+    static void triggerRandomEvent(Player& player);
+    static std::string getStringInput(const std::string& prompt);
+    static void clearInputBuffer();
+    static int displayMainMenu(const std::string& playerName);
+    static int getIntInput(const std::string& prompt, int min, int max);
+    static void handleArmy(Player& player, const Vector<Player>& players);
+    static void handleEconomy(Player& player);
+    static void handleTrade(Player& player);
+    static void handleDiplomacy(Player& player, const Vector<Player>& players);
+    static void handleCommunication(Player& player, MultiplayerChat& chat, Vector<std::string>& messageLog);
+    static void playerTurn(Player& player, const Vector<Player>& players, MultiplayerChat& chat, Vector<std::string>& messageLog, int turn);
+};
