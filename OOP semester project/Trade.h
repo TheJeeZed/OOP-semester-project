@@ -154,18 +154,8 @@ public:
     int getResourceAmount(ResourceType type) const;
     void printResources() const;
 };
-class Loan {
-public:
-    int amount;
-    int remainingTurns;
-    double interestRate;
-    bool isDefaulted;
-    Loan();
-    Loan(int amt, int turns, double rate);
-};
 class Economy {
 private:
-    Vector<Loan> activeLoans;
     float inflationRate;
     float corruptionLevel;
     float marketHealth;
@@ -173,31 +163,26 @@ private:
     float taxRateNoble;
     bool progressiveTax;
     bool marketCrash;
-    int hospitalBudget;
-    int foodBudget;
-    int militaryBudget;
     int securityExpense;
     int treasuryGold;
+    int debt;
 public:
     Economy();
     void collectTaxes(int poorPopulation, int noblePopulation);
     void setTaxRates(float poorRate, float nobleRate, bool isProgressive);
     void simulateInflation();
-    void printMoney(int amount);
     void triggerRandomEvent();
     void checkMarketCrash();
     void increaseCorruption(float amount);
     void setCorruption(float amount);
-    bool allocateBudget(int hospital, int food, int military);
     void displayStatus();
     void simulateCorruption();
-    void takeLoan(int amount, int turns, double interest);
     void simulateLoanTurn();
-    bool repayLoan(int index);
-    void checkDefaults();
     void triggerFraud(FraudEvent event);
     void audit();
     void normalizedata();
+    void takeLoan(int amount, float interest);
+    int getDebt();
     void addGold(int amount);
     bool spendGold(int amount);
     int& getGold();

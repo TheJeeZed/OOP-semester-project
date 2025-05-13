@@ -207,20 +207,8 @@ void Resource::printResources() const {
     std::cout << "===============================" << std::endl;
 }
 
-Loan::Loan() {
-    amount = 0;
-    remainingTurns = 0;
-    interestRate = 0;
-    isDefaulted = false;
-}
-Loan::Loan(int amt, int turns, double rate) {
-    amount = amt;
-    remainingTurns = turns;
-    interestRate = rate;
-    isDefaulted = false;
-}
-
 Economy::Economy() {
+    debt = 0;
     treasuryGold = 1000;
     inflationRate = 2.0f;
     corruptionLevel = 0.1f;
@@ -229,9 +217,6 @@ Economy::Economy() {
     taxRateNoble = 0.15f;
     progressiveTax = true;
     marketCrash = false;
-    hospitalBudget = 200;
-    foodBudget = 150;
-    militaryBudget = 250;
     securityExpense = 0;
 }
 void Economy::setTaxRates(float poorRate, float nobleRate, bool isProgressive) {
@@ -257,11 +242,6 @@ void Economy::collectTaxes(int poorPopulation,int noblePopulation) {
 void Economy::simulateInflation() {
     treasuryGold *= (1 - (inflationRate / 100.0));
     std::cout << "Inflation reduced treasury by " << inflationRate << "%." << std::endl;
-}
-void Economy::printMoney(int amount) {
-    treasuryGold += amount;
-    inflationRate += amount / 1000.0f;
-    std::cout << "Printed " << amount << " gold. Inflation increased to " << inflationRate << "%." << std::endl;
 }
 void Economy::increaseCorruption(float amount) {
     corruptionLevel += amount;
@@ -308,40 +288,16 @@ void Economy::checkMarketCrash() {
         marketCrash = true;
     }
 }
-bool Economy::allocateBudget(int hospital, int food, int military) {
-    int total = hospital + food + military;
-    if (total > treasuryGold) {
-        std::cout << "Not enough treasury funds to allocate this budget." << std::endl;
-        return false;
-    }
-    hospitalBudget += hospital;
-    foodBudget += food;
-    militaryBudget += military;
-    treasuryGold -= total;
-    std::cout << "Budget allocated successfully." << std::endl;
-    return true;
-}
 void Economy::displayStatus() {
     std::cout << "Treasury: " << treasuryGold << std::endl;
     std::cout << "Inflation Rate: " << inflationRate << "%" << std::endl;
     std::cout << "Corruption Level: " << corruptionLevel << std::endl;
     std::cout << "Market Health: " << marketHealth << "%" << std::endl;
     std::cout << "Progressive Tax: " << (progressiveTax ? "ON" : "OFF") << std::endl;
-    std::cout << "Hospital: " << hospitalBudget << std::endl;
-    std::cout << "Food: " << foodBudget << std::endl;
-    std::cout << "Military: " << militaryBudget << std::endl;
     std::cout << "Security Expense/Turn: " << securityExpense << std::endl;
     if (marketCrash)
         std::cout << "Market has recently crashed!" << std::endl;
-    std::cout << "Active Loans: " << activeLoans.size() << std::endl;
-    for (size_t i = 0; i < activeLoans.size(); ++i) {
-        const auto& loan = activeLoans[i];
-        std::cout << " - Loan #" << i + 1
-            << " | Amount: " << loan.amount
-            << " | Remaining: " << loan.remainingTurns
-            << " | Interest: " << loan.interestRate * 100 << "%"
-            << " | Status: " << (loan.isDefaulted ? "Defaulted" : "Active") << std::endl;
-    }
+    std::cout << "Debt: " << debt << std::endl;
 }
 void Economy::simulateCorruption() {
     int chance = rand() % 100;
@@ -356,49 +312,16 @@ void Economy::simulateCorruption() {
         std::cout << "Spent " << securityExpense << " gold on security expenses." << std::endl;
     }
 }
-void Economy::takeLoan(int amount, int turns, double interest) {
-    Loan L(amount, turns, interest);
-    activeLoans.push_back(L);
-    treasuryGold += amount;
-    std::cout << "Loan Taken: " << amount << " gold | Repay in " << turns << " turns at " << interest * 100 << "% interest" << std::endl;
-}
 void Economy::simulateLoanTurn() {
-    for (int i = 0; i < activeLoans.size(); i++) {
-        if (!activeLoans[i].isDefaulted) {
-            activeLoans[i].remainingTurns--;
-        }
+    if (debt <= 0) return;
+    if (treasuryGold > 10) {
+        std::cout << "Returned 10 gold in debt" << std::endl;
+        treasuryGold -= 10;
+        debt -= 10;
     }
-    checkDefaults();
-}
-bool Economy::repayLoan(int index) {
-    if (index < 0 || index >= activeLoans.size()) return false;
-    Loan& loan = activeLoans[index];
-
-    if (loan.isDefaulted) {
-        std::cout << "Cannot repay a defaulted loan." << std::endl;
-        return false;
-    }
-
-    int dueAmount = static_cast<int>(loan.amount * (1.0 + loan.interestRate));
-    if (spendGold(dueAmount)) {
-        std::cout << "Repaid loan of " << loan.amount << " with " << loan.interestRate * 100 << "% interest (" << dueAmount << ")" << std::endl;
-        activeLoans.erase(activeLoans.begin() + index);
-        return true;
-    }
-    return false;
-}
-void Economy::checkDefaults() {
-    for (int i = 0; i < activeLoans.size(); i++) {
-        if (activeLoans[i].remainingTurns <= 0 && !activeLoans[i].isDefaulted) {
-            activeLoans[i].isDefaulted = true;
-            std::cout << "Loan of " << activeLoans[i].amount << " has defaulted! Land and assets may be seized." << std::endl;
-            treasuryGold = std::max(0, treasuryGold - 100);
-        }
-    }
-    for (int i = 0; i < activeLoans.size(); i++) {
-        if (activeLoans[i].isDefaulted) {
-            treasuryGold -= 100;
-        }
+    else {
+        std::cout << "NOT enough gold!!" << std::endl;
+        inflationRate += 0.01f;
     }
 }
 void Economy::triggerFraud(FraudEvent event) {
@@ -445,6 +368,13 @@ void Economy::normalizedata() {
         corruptionLevel += -(treasuryGold) / 100.0;
         treasuryGold = 0;
     }
+}
+void Economy::takeLoan(int amount, float interest) {
+    debt += amount + amount * interest;
+    treasuryGold += amount + amount * interest;
+}
+int Economy::getDebt() {
+    return debt;
 }
 void Economy::addGold(int amount) {
     treasuryGold += amount;
@@ -732,15 +662,19 @@ Player::Player(const std::string& n) : name(n), army(20, 500, 200), active(true)
 
 void Event::triggerRandomEvent(Player& player) {
     int event = rand() % 10;
-    if (event == 5) {
-        std::cout << "PLAGUE STRIKES!" << std::endl;
+    if (event == 0) {
+        player.economy.triggerRandomEvent();
+    }
+    if (event == 1) {
         player.population.simulatePlague();
     }
-    else if (event == 7) {
-        std::cout << "FAMINE OCCURS!" << std::endl;
+    else if (event == 2) {
+        player.economy.simulateInflation();
+    }
+    else if (event == 3) {
         player.population.simulateFamine();
     }
-    else if (event == 1) {
+    else if (event == 4) {
         player.population.simulatePopulationGrowth();
     }
 }
@@ -854,7 +788,7 @@ void Event::handleEconomy(Player& player) {
         std::cout << "=== Economy Menu ===" << std::endl;
         player.economy.displayStatus();
         std::cout << "1. Collect Taxes" << std::endl;
-        std::cout << "2. Simulate Inflation" << std::endl;
+        std::cout << "2. Take 100 Gold As Loan" << std::endl;
         std::cout << "3. Back" << std::endl;
         int choice = getIntInput("Choose an option (1-3): ", 1, 3);
         switch (choice)
@@ -866,11 +800,11 @@ void Event::handleEconomy(Player& player) {
             std::this_thread::sleep_for(std::chrono::seconds(2));
             return;
         case 2:
-            player.economy.simulateInflation();
-            std::cout << player.name << " simulated inflation." << std::endl;
+            player.economy.takeLoan(100.0f, 0.1f);
+            std::cout << player.name << " took a loan of 100 gold with 10% interest." << std::endl;
             player.economy.displayStatus();
+            std::cout << "Debt: " << player.economy.getDebt() << " gold" << std::endl;
             std::this_thread::sleep_for(std::chrono::seconds(2));
-            return;
             break;
         }
         if (choice == 3)break;
@@ -992,6 +926,7 @@ void Event::playerTurn(Player& player, const Vector<Player>& players, Multiplaye
     std::cout << std::endl;
     std::cout << "=== Turn " << turn << ": " << player.name << "'s Status ===" << std::endl;
     player.economy.displayStatus();
+    player.economy.simulateLoanTurn();
     player.resources.printResources();
     player.population.displayStats();
     player.army.displayStatus();
